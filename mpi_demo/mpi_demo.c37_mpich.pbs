@@ -1,0 +1,26 @@
+#!/bin/bash
+#PBS -N mpi_demo
+#PBS -q debug
+#PBS -l select=2:ncpus=48:mpiprocs=8
+#PBS -l walltime=00:02:00
+#PBS -l place=scatter:excl
+#PBS -j oe
+#PBS -V
+
+# Load Modules
+module load singularity
+module swap mpt compiler/intelmpi
+
+# Environment Setup
+JOBID=`echo ${PBS_JOBID} | cut -d '.' -f 1`
+cp ../images/conda37_mpich.sif ${JOBDIR}
+cp ./*.py ${JOBDIR}
+cd ${JOBDIR}
+
+export DATADIR=$WORKDIR/forge/das
+
+# Launch Executible
+mpiexec -n 16 singularity exec --bind /var/spool/pbs/,$WORKDIR conda37_mpich.sif python mpi4py_demo.py > results
+
+# Cleanup
+cp results $HOME/mpi_demo/results.$JOBID

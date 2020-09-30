@@ -1,0 +1,8 @@
+Bootstrap:docker
+From:continuumio/miniconda3:latest
+
+%post
+    PATH="/opt/conda/bin:${PATH}"
+    conda config --add channels conda-forge
+    conda install mpi4py=3.0.3=py37h0c5ec45_1 obspy
+    conda clean -a -y

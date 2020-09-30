@@ -1,0 +1,8 @@
+Bootstrap:docker
+From:continuumio/miniconda3:latest
+
+%post
+    PATH="/opt/conda/bin:${PATH}"
+    conda config --add channels conda-forge
+    conda install pytorch
+    conda clean -a -y

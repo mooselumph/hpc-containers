@@ -1,0 +1,52 @@
+#!/bin/bash
+#PBS -l walltime=12:00:00
+#PBS -q transfer
+#PBS -l select=1:ncpus=1
+#PBS -j oe
+#PBS -V
+
+function prefix
+{
+    regex="^(.*)[[:digit:]]{4}.sgy$"
+    for file in *.sgy
+    do
+        if [[ $file =~ $regex ]]
+        then 
+            echo "${BASH_REMATCH[1]}"
+        fi
+    done | sort -u
+}
+
+STATUS=`archive stat -retry 1 | grep 'on-line' | wc -l`
+if [ $STATUS -eq 0 ] ; then
+  echo "Archive system not on-line!!"
+  echo "Job data files cannot be stored."
+  echo "Retrieve them in `pwd` in my_output_data.tar.gz"
+  echo "Exiting"
+  echo `date`
+  exit 2
+fi
+
+# Move to location of forge data
+datadir=$WORKDIR/forge/das
+cd $datadir
+
+dir="forge_das"
+archive mkdir -p $dir
+
+for pfx in $(prefix)
+do 
+    # Check if file already exists
+    if [ -f "${ARCHIVE_HOME}/${dir}/${pfx}.tar" ]; then
+        echo "${pfx}.tar already exists on archival drive; skipping."
+    else    
+        echo "Creating archive for prefix: ${pfx}"
+        find ${pfx}*.sgy | xargs tar -cf  ${pfx}.tar
+        echo "Sending tar file to archival drive."
+        archive put -C $dir ${pfx}.tar 
+        echo "Check that file transfer was successful":
+        archive ls -al -C $dir/${pfx}.tar
+        echo "Deleting local tar file."
+        rm ${pfx}.tar
+    fi
+done
